@@ -29,7 +29,7 @@ This module contains functions and classes related to Conjur interactions to man
 
 NOTE:  Microsoft Code Pytest configuration requires these entries for these files:
 
-```launch.json``` - Requires "version" to be added
+```launch.json``` - Requires "version" and "args" to be added
 ```
 {
     "version": "0.2.0",
