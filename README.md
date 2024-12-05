@@ -1,6 +1,6 @@
 # upload_spdx_to_corona
 
-<H1>upload_spdx.py</H1>
+<H2>upload_spdx.py</H2>
 <H3>
 This module contains functions and classes related to uploading an SPDX document file to Corona utilizing the Corona REST_API.
 </H3>
@@ -18,7 +18,7 @@ Also includes
 - Sample SPDX document file (JSON) to upload (```bes-traceability-spdx.json```)
 - 
 
-<H1>conjur_client.py</H1>
+<H2>conjur_client.py</H2>
 <H3>
 This module contains functions and classes related to Conjur interactions to manage Corona secrets.
 </H3>
