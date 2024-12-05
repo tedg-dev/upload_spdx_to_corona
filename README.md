@@ -5,7 +5,7 @@
 This module contains functions and classes related to uploading an SPDX document file to Corona utilizing the Corona REST_API.
 </H3>
   
-- Get PAT creds
+- Get PAT creds from ConjurClient.py
 - validate via auth api, get API token for Corona headers
 - Get user info
 - Get/Create Product
