@@ -26,7 +26,8 @@ This module contains functions and classes related to Conjur interactions to man
 - Authenticate with Conjur
 - Get secrets from Conjur
 
-
+<BR/> 
+<BR/> 
 NOTE:  Microsoft Code Pytest configuration requires these entries for these files:
 
 ```launch.json``` - Requires "version" and "args" to be added
