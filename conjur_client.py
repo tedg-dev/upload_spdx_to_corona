@@ -12,8 +12,9 @@ import logging
 import requests
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig()
+logger = logging.getLogger('conjur_client ')
+logger.setLevel(level=logging.INFO)
 
 
 class ConjurError(Exception):
