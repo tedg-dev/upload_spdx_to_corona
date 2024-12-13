@@ -346,10 +346,7 @@ def main():
         image_manager = ImageManager(host, user_name)
         spdx_manager = SpdxManager(host, user_name)
 
-        msg = f"Adding SPDX '{CoronaConfig.get_spdx_file_path()}' to" \
-               " '{CoronaConfig.get_product_name()}'" \
-               " v'{CoronaConfig.get_release_version()}'," \
-               " image '{CoronaConfig.get_image_name()}')\n"
+        msg = f"Adding SPDX '{CoronaConfig.get_spdx_file_path()}' to '{CoronaConfig.get_product_name()}' v'{CoronaConfig.get_release_version()}', image '{CoronaConfig.get_image_name()}')\n"
         logger.info(msg)
 
         # Operations
@@ -358,9 +355,7 @@ def main():
         image_id = image_manager.get_or_create_image(product_id, release_id, CoronaConfig.get_image_name())
         spdx_response = spdx_manager.update_or_add_spdx(image_id, CoronaConfig.get_spdx_file_path())
 
-        msg = f"SPDX added to '{CoronaConfig.get_product_name()}' " \
-               "v'{CoronaConfig.get_release_version()}', " \
-               "image '{CoronaConfig.get_image_name()}' ({image_id}) successfully.\n"
+        msg = f"SPDX added to '{CoronaConfig.get_product_name()}' v'{CoronaConfig.get_release_version()}', image '{CoronaConfig.get_image_name()}' ({image_id}) successfully.\n"
         logger.info(msg)
 
     except CoronaError as e:
