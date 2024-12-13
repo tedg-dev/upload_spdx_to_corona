@@ -18,10 +18,10 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out the source code...'
-//                 checkout scm
-                script {
-                    git clone --single-branch --branch master ssh://git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
-                }
+                checkout scm
+//                 script {
+//                     git clone --single-branch --branch master ssh://git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
+//                 }
             }
         }
 
