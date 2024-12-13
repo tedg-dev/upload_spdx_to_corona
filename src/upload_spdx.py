@@ -195,8 +195,8 @@ class ProductManager(CoronaAPIClient):
             logger.info(msg)
             return res_json['data'][0]['id']
 
-        except KeyError:
-            raise CoronaError(f"Unexpected response structure while fetching product '{product_name}'") from exc
+        except KeyError as e:
+            raise CoronaError(f"Unexpected response structure while fetching product '{product_name}'") from e
 
     def _create_product(self, product_name):
         ''' Create a product for a given product_name '''
@@ -264,8 +264,8 @@ class ImageManager(CoronaAPIClient):
             logger.info(msg)
             return image_id
 
-        except KeyError:
-            raise CoronaError(f"Unexpected response structure while fetching image '{image_name}'") from exc
+        except KeyError as e:
+            raise CoronaError(f"Unexpected response structure while fetching image '{image_name}'") from e
 
     def _create_image(self, product_id, release_id, image_name):
         ''' Create an image for a given product_id, release_id, image_name '''
