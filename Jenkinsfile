@@ -22,15 +22,19 @@ pipeline {
             }
         }
 
-//         stage('Setup') {
-//             steps {
-//                 script {
-//                     echo 'Preparing environment...'
-//                     // Ensure input file exists
-//                     writeFile file: env.INPUT_FILE, text: "Sample input data"
-//                 }
-//             }
-//         }
+        stage('Setup') {
+            steps {
+                script {
+                    echo 'Preparing environment...'
+                    // Create a virtual environment
+                    python3 -m venv upload_spdx_py_venv
+                    source upload_spdx_py_venv/bin/activate
+
+                    // Install dependencies
+                    pip install requests pytest
+                }
+            }
+        }
 
 //         stage('Build Docker Image') {
 //             steps {
@@ -43,12 +47,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                // Create a virtual environment
-                sh 'python3 -m venv upload_spdx_py_venv'
+                // Activate the virtual environment
                 sh 'source upload_spdx_py_venv/bin/activate'
-
-                // Install dependencies
-                sh 'pip install requests pytest'
 
                 // Build upload_spdx.py
                 sh 'cd src'
@@ -65,18 +65,20 @@ pipeline {
                 sh 'source upload_spdx_py_venv/bin/activate'
 
                 // Run tests
-                sh 'pytest'
+                sh 'pytest test/test_upload_spdx.py'
             }
         }
 
-//         stage('Pytest upload_spdx') {
-//             steps {
-//                 script {
-//                     echo 'Running Pytest...'
-//                     sh "docker build -t ${env.DOCKER_IMAGE} ."
-//                 }
-//             }
-//         }
+        stage('Run - upload') {
+            steps {
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                sh 'cd src'
+                sh 'python3 upload_spdx.py'
+            }
+        }
+
 
 //         stage('Build Docker Image') {
 //             steps {
