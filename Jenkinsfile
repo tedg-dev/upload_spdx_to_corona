@@ -22,15 +22,61 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+//         stage('Setup') {
+//             steps {
+//                 script {
+//                     echo 'Preparing environment...'
+//                     // Ensure input file exists
+//                     writeFile file: env.INPUT_FILE, text: "Sample input data"
+//                 }
+//             }
+//         }
+
+//         stage('Build Docker Image') {
+//             steps {
+//                 script {
+//                     echo 'Building Docker image...'
+//                     sh "docker build -t ${env.DOCKER_IMAGE} ."
+//                 }
+//             }
+//         }
+
+        stage('Build') {
             steps {
-                script {
-                    echo 'Preparing environment...'
-                    // Ensure input file exists
-                    writeFile file: env.INPUT_FILE, text: "Sample input data"
-                }
+                // Create a virtual environment
+                sh 'python3 -m venv upload_spdx_py_venv'
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                // Install dependencies
+                sh 'pip install requests pytest'
+
+                // Build upload_spdx.py
+                sh 'cd src'
+                sh 'python3 upload_spdx.py'
+
+                // Build Docker image (if applicable)
+//                 sh 'docker build -t my-app .'
             }
         }
+
+        stage('Test') {
+            steps {
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                // Run tests
+                sh 'pytest'
+            }
+        }
+
+//         stage('Pytest upload_spdx') {
+//             steps {
+//                 script {
+//                     echo 'Running Pytest...'
+//                     sh "docker build -t ${env.DOCKER_IMAGE} ."
+//                 }
+//             }
+//         }
 
 //         stage('Build Docker Image') {
 //             steps {
