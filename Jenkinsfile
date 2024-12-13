@@ -30,8 +30,8 @@ pipeline {
                 script {
                     echo 'Preparing environment...'
                     // Create a virtual environment
-                    python3 -m venv upload_spdx_py_venv
-                    source upload_spdx_py_venv/bin/activate
+//                     python3 -m venv upload_spdx_py_venv
+//                     source upload_spdx_py_venv/bin/activate
 
                     // Install dependencies
                     pip install requests pytest
@@ -51,7 +51,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Activate the virtual environment
-                sh 'source upload_spdx_py_venv/bin/activate'
+//                 sh 'source upload_spdx_py_venv/bin/activate'
 
                 // Build upload_spdx.py
                 sh 'cd src'
@@ -65,7 +65,7 @@ pipeline {
         stage('Test') {
             steps {
                 // Activate the virtual environment
-                sh 'source upload_spdx_py_venv/bin/activate'
+//                 sh 'source upload_spdx_py_venv/bin/activate'
 
                 // Run tests
                 sh 'pytest test/test_upload_spdx.py'
