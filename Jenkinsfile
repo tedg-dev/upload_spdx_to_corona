@@ -20,7 +20,7 @@ pipeline {
                 echo 'Checking out the source code...'
 //                 checkout scm
                 script {
-                    git clone git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
+                    git clone --single-branch --branch master ssh://git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
                 }
             }
         }
