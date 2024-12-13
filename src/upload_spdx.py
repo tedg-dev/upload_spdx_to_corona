@@ -24,10 +24,6 @@ logger.setLevel(level=logging.INFO)
 
 MAX_REQ_TIMEOUT = 120    # requests default timeout = 120 seconds
 
-class CoronaError(Exception):
-    '''Custom Exception for handling Corona API related errors'''
-    pass
-
 
 class CoronaConfig:
     '''Configuration for Corona-related environment variables and defaults.'''
@@ -77,6 +73,11 @@ class CoronaConfig:
     def get_spdx_file_path():
         # return os.getenv('CORONA_PRODUCT_NAME', 'your_spdx_file_path_here')
         return os.getenv('CORONA_PRODUCT_NAME', './bes-traceability-spdx.json')
+
+
+class CoronaError(Exception):
+    '''Custom Exception for handling Corona API related errors'''
+    pass
 
 
 
