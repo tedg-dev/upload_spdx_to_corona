@@ -127,8 +127,8 @@ pipeline {
             echo 'Pipeline failed.'
         }
         always {
-            echo 'Cleaning up workspace...'
-            cleanWs()
+//             echo 'Cleaning up workspace...'
+//             cleanWs()
         }
     }
 }
