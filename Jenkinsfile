@@ -26,44 +26,22 @@ pipeline {
             steps {
                 script {
                     echo 'Preparing environment...'
-                    // Create a virtual environment
-//                     python3 -m venv upload_spdx_py_venv
-//                     source upload_spdx_py_venv/bin/activate
-
                     // Install dependencies
                     pip install requests pytest
                 }
             }
         }
 
-//         stage('Build Docker Image') {
-//             steps {
-//                 script {
-//                     echo 'Building Docker image...'
-//                     sh "docker build -t ${env.DOCKER_IMAGE} ."
-//                 }
-//             }
-//         }
-
         stage('Build') {
             steps {
-                // Activate the virtual environment
-//                 sh 'source upload_spdx_py_venv/bin/activate'
-
                 // Build upload_spdx.py
                 sh 'cd src'
                 sh 'python3 upload_spdx.py'
-
-                // Build Docker image (if applicable)
-//                 sh 'docker build -t my-app .'
             }
         }
 
         stage('Test') {
             steps {
-                // Activate the virtual environment
-//                 sh 'source upload_spdx_py_venv/bin/activate'
-
                 // Run tests
                 sh 'pytest test/test_upload_spdx.py'
             }
@@ -71,41 +49,10 @@ pipeline {
 
         stage('Run - upload') {
             steps {
-                // Activate the virtual environment
-                sh 'source upload_spdx_py_venv/bin/activate'
-
                 sh 'cd src'
                 sh 'python3 upload_spdx.py'
             }
         }
-
-
-//         stage('Build Docker Image') {
-//             steps {
-//                 script {
-//                     echo 'Building Docker image...'
-//                     sh "docker build -t ${env.DOCKER_IMAGE} ."
-//                 }
-//             }
-//         }
-
-//         stage('Run Ephemeral Container') {
-//             steps {
-//                 script {
-//                     echo 'Running application in ephemeral Docker container...'
-//                     sh "docker run --rm -e ENV_VAR_KEY=MY_ENV_KEY -e ENV_VAR_VALUE=MY_ENV_VALUE -e INPUT_FILE=${env.INPUT_FILE} -e OUTPUT_FILE=${env.OUTPUT_FILE} ${env.DOCKER_IMAGE}"
-//                 }
-//             }
-//         }
-
-//         stage('Archive Output') {
-//             steps {
-//                 script {
-//                     echo 'Archiving the output file...'
-//                     archiveArtifacts artifacts: env.OUTPUT_FILE, onlyIfSuccessful: true
-//                 }
-//             }
-//         }
     }
 
     post {
