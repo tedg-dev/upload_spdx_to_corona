@@ -16,14 +16,13 @@ import time
 import argparse
 import logging
 import requests
-from conjur_client import ConjurConfig
-from conjur_client import ConjurClient
 
 # Configure logging
 logging.basicConfig()
 logger = logging.getLogger('upload_spdx ')
 logger.setLevel(level=logging.INFO)
 
+MAX_REQ_TIMEOUT = 120    # requests default timeout = 120 seconds
 
 class CoronaError(Exception):
     '''Custom Exception for handling Corona API related errors'''
@@ -31,8 +30,13 @@ class CoronaError(Exception):
 
 
 class CoronaConfig:
-    '''Configuration handling for environment variables and defaults.'''
+    '''Configuration for Corona-related environment variables and defaults.'''
 
+    @staticmethod
+    def get_corona_pat():
+        # return os.getenv('CORONA_PAT', 'your_corona_pat_here')
+        return os.getenv('CORONA_PAT', 'corona_eyJhbGciOiJIUzI1NiJ9_eyJuYmYiOjE3MzEwOTA5NDksImlhdCI6MTczMTA5MDk0OSwiZXhwIjoxNzM4ODY2OTQ5LCJwYXQiOnsibmFtZSI6InRlZGdjaXNjby5nZW5AY2lzY28uY29tIn0sImp0aSI6MTA1Nn0_9YIqxLblw1thQHKzR2S6gxysWLlNqC7K1BffLrPIQm8')
+    
     @staticmethod
     def get_host():
         return os.getenv('CORONA_HOST', 'corona.cisco.com')
@@ -52,6 +56,29 @@ class CoronaConfig:
         # return os.getenv('CORONA_ENGINEERING_CONTACT', 'your_mailer_id_here')
         return os.getenv('CORONA_ENGINEERING_CONTACT', 'upload_spdx_mailer')
 
+    # NOTE: The config items below are where in Corona the SPDX file is uploaded
+
+    @staticmethod
+    def get_product_name():
+        # return os.getenv('CORONA_PRODUCT_NAME', 'your_corona_product_name_here')
+        return os.getenv('CORONA_PRODUCT_NAME', 'tedg test 2024-11-20')
+
+    @staticmethod
+    def get_release_version():
+        # return os.getenv('CORONA_RELEASE_VERSION', 'your_corona_release_version_here')
+        return os.getenv('CORONA_RELEASE_VERSION', '1.0.20')
+
+    @staticmethod
+    def get_image_name():
+        # return os.getenv('CORONA_IMAGE_NAME', 'your_corona_image_name_here')
+        return os.getenv('CORONA_IMAGE_NAME', 'test imageViaApi.20')
+
+    @staticmethod
+    def get_spdx_file_path():
+        # return os.getenv('CORONA_PRODUCT_NAME', 'your_spdx_file_path_here')
+        return os.getenv('CORONA_PRODUCT_NAME', './bes-traceability-spdx.json')
+
+
 
 class CoronaAPIClient:
     
@@ -65,13 +92,9 @@ class CoronaAPIClient:
         ''' Get Bearer token using the PAT (Personal Access Token) '''
         if not self.token:
             try:
-                # Get Corona PAT from Conjur - Initialize and Authenticate Conjur client, retrieve secrets
-                client = ConjurClient(url=ConjurConfig.get_conjur_url(),
-                                      account=ConjurConfig.get_conjur_account(),
-                                      username=ConjurConfig.get_conjur_username(),
-                                      api_key=ConjurConfig.get_conjur_api_key())
-                self.pat = client.get_secret(ConjurConfig.get_conjur_app_password())
-                msg = (f"Retrieved Corona PAT from Conjur: {self.pat}"); logger.debug(msg)
+                # Corona PAT (Personal Access Token for self.user_name)
+                self.pat = CoronaConfig.get_corona_pat()
+                # msg = (f"Corona PAT : {self.pat}"); logger.debug(msg)
 
                 pat_header = {
                     'user': {
@@ -79,17 +102,19 @@ class CoronaAPIClient:
                         'pat': self.pat
                     }
                 }
-                msg = (f'>>>TEST>>> sign_in, pat_header = {pat_header}/n') ; logger.debug(msg)
+                msg = (f'>>>TEST>>> sign_in, pat_header = {pat_header}/n')
+                logger.debug(msg)
                 sign_in_res = requests.post(f'https://{self.host}/api/auth/sign_in', json=pat_header)
                 sign_in_res.raise_for_status()
                 self.token = sign_in_res.json().get('token')
-                msg = (f'>>>TEST>>> sign_in, pat_header = {pat_header}, API token = {self.token}/n'); logger.debug(msg)
+                msg = (f'>>>TEST>>> sign_in, pat_header = {pat_header}, API token = {self.token}/n')
+                logger.debug(msg)
                 if not self.token:
                     raise CoronaError('Failed to retrieve token from response.')
             except requests.exceptions.RequestException as e:
-                raise CoronaError(f'Error obtaining auth token: {e}')
+                raise CoronaError(f'Error obtaining auth token: {e}') from e
             except Exception as e:
-                raise CoronaError(f'Error: {e}')
+                raise CoronaError(f'Error: {e}') from e
                 
         return self.token
 
@@ -112,21 +137,30 @@ class CoronaAPIClient:
 
         for attempt in range(retries):
             try:
-                msg = (f'>>>TEST>>> headers = {headers}, url = {url}/n'); logger.debug(msg)
-                response = requests.request(method, url, headers=headers, json=data, files=files)
+                msg = (f'>>>TEST>>> headers = {headers}, url = {url}/n')
+                logger.debug(msg)
+                response = requests.request(method, 
+                                            url, 
+                                            headers=headers, 
+                                            json=data, 
+                                            files=files,
+                                            timeout=MAX_REQ_TIMEOUT)
                 response.raise_for_status()
                 return response.json()
 
             except requests.exceptions.HTTPError as e:
                 if response.status_code in [429, 500, 502, 503, 504]:
-                    msg = (f'Temporary server error ({response.status_code}). Retrying... ({attempt + 1}/{retries})'); logger.warning(msg)
+                    msg = (f'Temporary server error ({response.status_code}).  ' \
+                            'Retrying... ({attempt + 1}/{retries})')
+                    logger.warning(msg)
                     time.sleep(2 ** attempt)
                 else:
                     self._handle_error(e, response, f'requesting {endpoint}')
                     break
 
             except requests.exceptions.RequestException as e:
-                msg = (f'Network error: {e}. Retrying... ({attempt + 1}/{retries})'); logger.warning(msg)
+                msg = (f'Network error: {e}. Retrying... ({attempt + 1}/{retries})')
+                logger.warning(msg)
                 time.sleep(2 ** attempt)
 
         raise CoronaError(f'Failed to perform request to {endpoint} after {retries} attempts')
@@ -138,8 +172,11 @@ class CoronaAPIClient:
             401: f'Unauthorized access while {action}. Invalid PAT or token.',
             422: f'Invalid request during {action}. Ensure that the name is unique.',
         }
-        msg = (f">>_handle_error_TEST>> e = '{e}' \nresponse = '{response.json()}'"); logger.debug(msg)
-        msg = error_messages.get(response.status_code, f'Error {action}: {response.status_code} ({response.text})'); logger.fatal(msg)
+        msg = (f">>_handle_error_TEST>> e = '{e}' \nresponse = '{response.json()}'")
+        logger.debug(msg)
+        msg = error_messages.get(response.status_code, 
+                                 f'Error {action}: {response.status_code} ({response.text})')
+        logger.fatal(msg)
         sys.exit(response.status_code)
 
 
@@ -153,11 +190,12 @@ class ProductManager(CoronaAPIClient):
             if not res_json['data']:
                 return self._create_product(product_name)
 
-            msg = f"Product '{product_name}' product_id {res_json['data'][0]['id']} found"; logger.info(msg)
+            msg = f"Product '{product_name}' product_id {res_json['data'][0]['id']} found"
+            logger.info(msg)
             return res_json['data'][0]['id']
 
         except KeyError:
-            raise CoronaError(f"Unexpected response structure while fetching product '{product_name}'")
+            raise CoronaError(f"Unexpected response structure while fetching product '{product_name}'") from exc
 
     def _create_product(self, product_name):
         ''' Create a product for a given product_name '''
@@ -168,7 +206,8 @@ class ProductManager(CoronaAPIClient):
             'enable_certificate_notifications': True
         }
         res_json = self.make_authenticated_request('POST', 'api/v2/products', data)
-        msg = f"Product '{product_name}' product_id {res_json['id']} created"; logger.info(msg)
+        msg = f"Product '{product_name}' product_id {res_json['id']} created"
+        logger.info(msg)
 
         return res_json['id']
 
@@ -184,7 +223,8 @@ class ReleaseManager(CoronaAPIClient):
             if not release:
                 return self._create_release(product_id, release_version)
 
-            msg = f"Release '{release_version}' ({release['id']}) found"; logger.info(msg)
+            msg = f"Release '{release_version}' ({release['id']}) found"
+            logger.info(msg)
             return release['id']
 
         except KeyError:
@@ -203,7 +243,8 @@ class ReleaseManager(CoronaAPIClient):
             }
         }
         res_json = self.make_authenticated_request('POST', 'api/v1/releases', data)
-        msg = f"Release '{release_version}' release_id {res_json['id']} created"; logger.info(msg)
+        msg = f"Release '{release_version}' release_id {res_json['id']} created"
+        logger.info(msg)
         return res_json['id']
 
 
@@ -218,11 +259,12 @@ class ImageManager(CoronaAPIClient):
             if not image_id:
                 return self._create_image(product_id, release_id, image_name)
 
-            msg = f"Image '{image_name}' image_id {image_id} found"; logger.info(msg)
+            msg = f"Image '{image_name}' image_id {image_id} found"
+            logger.info(msg)
             return image_id
 
         except KeyError:
-            raise CoronaError(f"Unexpected response structure while fetching image '{image_name}'")
+            raise CoronaError(f"Unexpected response structure while fetching image '{image_name}'") from exc
 
     def _create_image(self, product_id, release_id, image_name):
         ''' Create an image for a given product_id, release_id, image_name '''
@@ -239,8 +281,11 @@ class ImageManager(CoronaAPIClient):
                     'scan_jobs_to_skip': []
                 }
             }
-            res_json = self.make_authenticated_request('POST', 'api/v2/images', data)
-            msg = f"Image '{image_name}' image_id {res_json['id']} created"; logger.info(msg)
+            res_json = self.make_authenticated_request('POST', 
+                                                       'api/v2/images', 
+                                                       data)
+            msg = f"Image '{image_name}' image_id {res_json['id']} created"
+            logger.info(msg)
             return res_json['id']
 
         except KeyError:
@@ -275,31 +320,21 @@ class SpdxManager(CoronaAPIClient):
             raise CoronaError(f"SPDX file '{spdx_file_path}' not found.")
 
         # First request to add JSON content
-        res_json = self.make_authenticated_request('POST', f'api/v2/images/{image_id}/spdx.json', data=spdx_data)
+        res_json = self.make_authenticated_request('POST', 
+                                                   f'api/v2/images/{image_id}/spdx.json', 
+                                                   data=spdx_data)
 
         # Upload file in the second request
         with open(spdx_file_path, 'rb') as f:
-            res_json = self.make_authenticated_request('POST', f'api/v2/images/{image_id}/spdx.json', files={'data': f})
+            res_json = self.make_authenticated_request('POST', 
+                                                       f'api/v2/images/{image_id}/spdx.json', 
+                                                       files={'data': f})
 
         return res_json
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Corona API Client')
-    # Example command line parameters:
-    # --product_name 'Product-test' --release_version '1.0' --image_name 'test imageViaApi' --spdx_file_path './bes-traceability-spdx.json'
-    parser.add_argument('--product_name', required=True, help='Product name to get or create')
-    parser.add_argument('--release_version', required=True, help='Release version to get or create')
-    parser.add_argument('--image_name', required=True, help='Image name to get or create')
-    parser.add_argument('--spdx_file_path', required=True, help='SPDX file name and path to add to Image')
-    return parser.parse_args()
-
-
 def main():
     try:
-        # Command line arguments
-        args = parse_arguments()
-
         # Configurations 
         host = CoronaConfig.get_host()
         user_name = CoronaConfig.get_user_name()
@@ -310,15 +345,22 @@ def main():
         image_manager = ImageManager(host, user_name)
         spdx_manager = SpdxManager(host, user_name)
 
-        msg = f"Adding SPDX '{args.spdx_file_path}' to '{args.product_name}' v'{args.release_version}', image '{args.image_name}')\n"; logger.info(msg)
+        msg = f"Adding SPDX '{CoronaConfig.get_spdx_file_path()}' to" \
+               " '{CoronaConfig.get_product_name()}'" \
+               " v'{CoronaConfig.get_release_version()}'," \
+               " image '{CoronaConfig.get_image_name()}')\n"
+        logger.info(msg)
 
         # Operations
-        product_id = product_manager.get_or_create_product(args.product_name)
-        release_id = release_manager.get_or_create_release(product_id, args.release_version)
-        image_id = image_manager.get_or_create_image(product_id, release_id, args.image_name)
-        spdx_response = spdx_manager.update_or_add_spdx(image_id, args.spdx_file_path)
+        product_id = product_manager.get_or_create_product(CoronaConfig.get_product_name())
+        release_id = release_manager.get_or_create_release(product_id, CoronaConfig.get_release_version())
+        image_id = image_manager.get_or_create_image(product_id, release_id, CoronaConfig.get_image_name())
+        spdx_response = spdx_manager.update_or_add_spdx(image_id, CoronaConfig.get_spdx_file_path())
 
-        msg = f"SPDX added to '{args.product_name}' v'{args.release_version}', image '{args.image_name}' ({image_id}) successfully.\n"; logger.info(msg)
+        msg = f"SPDX added to '{CoronaConfig.get_product_name()}' " \
+               "v'{CoronaConfig.get_release_version()}', " \
+               "image '{CoronaConfig.get_image_name()}' ({image_id}) successfully.\n"
+        logger.info(msg)
 
     except CoronaError as e:
         msg = {e}
