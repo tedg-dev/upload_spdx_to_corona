@@ -20,10 +20,7 @@ pipeline {
                 echo 'Checking out the source code...'
 //                 checkout scm
                 script {
-                    try {
-                    }
-                    catch {
-                    }
+                    git clone wwwin-github.cisco.com/tedg/upload_spdx_to_corona
                 }
             }
         }
