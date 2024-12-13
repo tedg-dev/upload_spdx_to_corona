@@ -18,7 +18,13 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out the source code...'
-                checkout scm
+//                 checkout scm
+                script {
+                    try {
+                    }
+                    catch {
+                    }
+                }
             }
         }
 
