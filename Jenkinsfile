@@ -15,19 +15,11 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out the source code...'
-                checkout scm
-//                 script {
-//                     git clone --single-branch --branch master ssh://git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
-//                 }
-            }
-        }
 
         stage('Checkout') {
           steps {
             script {
+//.              git clone --single-branch --branch master ssh://git@wwwin-github.cisco.com:tedg/upload_spdx_to_corona.git
                // The below will clone your repo and will be checked out to master branch by default.
                git credentialsId: 'jenkins-user-github', url: 'https://github.com/aakashsehgal/FMU.git'
                // Do a ls -lart to view all the files are cloned. It will be clonned. This is just for you to be sure about it.
