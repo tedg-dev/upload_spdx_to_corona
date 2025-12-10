@@ -82,18 +82,44 @@ export CORONA_SPDX_FILE_PATH="./bes-traceability-spdx.json"
 
 ### 3. Run the Application
 
-**Local Execution:**
+**Local Execution (Environment Variables):**
 ```bash
 source upload_spdx_py_env/bin/activate
-python src/upload_spdx.py
+python -m upload_spdx
 ```
 
-**Docker Execution:**
+**Local Execution (CLI Arguments):**
+```bash
+python -m upload_spdx \
+  --pat "your_pat" \
+  --product "Product Name" \
+  --release "1.0.0" \
+  --image "Image Name" \
+  --spdx-file "./spdx.json"
+```
+
+**Docker (Environment Variables):**
 ```bash
 docker run -e CORONA_PAT=$CORONA_PAT \
            -e CORONA_HOST=$CORONA_HOST \
            -e CORONA_USERNAME=$CORONA_USERNAME \
            upload_spdx:latest
+```
+
+**Docker (CLI Arguments):**
+```bash
+docker run upload_spdx:latest \
+  --product "Product Name" \
+  --release "1.0.0" \
+  --image "Image Name"
+```
+
+**Mixed (CLI overrides env vars):**
+```bash
+# Env vars provide defaults, CLI args override
+export CORONA_PAT="your_pat"
+export CORONA_HOST="corona.cisco.com"
+python -m upload_spdx --product "Override Product Name"
 ```
 
 ## Project Structure
@@ -118,6 +144,30 @@ upload_spdx_to_corona/
 ```
 
 ## Configuration
+
+### CLI Arguments
+
+The application supports command-line arguments that **override** environment variables:
+
+```bash
+python -m upload_spdx --help
+```
+
+**Available Arguments:**
+
+| Argument | Description | Overrides |
+|----------|-------------|-----------|
+| `--pat PAT` | Corona Personal Access Token | `CORONA_PAT` |
+| `--host HOST` | Corona host domain | `CORONA_HOST` |
+| `--username USER` | Corona username | `CORONA_USERNAME` |
+| `--product NAME` | Product name | `CORONA_PRODUCT_NAME` |
+| `--release VERSION` | Release version | `CORONA_RELEASE_VERSION` |
+| `--image NAME` | Image name | `CORONA_IMAGE_NAME` |
+| `--spdx-file PATH` | Path to SPDX file | `CORONA_SPDX_FILE_PATH` |
+| `--security-contact EMAIL` | Security contact | `CORONA_SECURITY_CONTACT` |
+| `--engineering-contact EMAIL` | Engineering contact | `CORONA_ENGINEERING_CONTACT` |
+| `-v, --verbose` | Enable verbose logging | - |
+| `--version` | Show version | - |
 
 ### Environment Variables
 
