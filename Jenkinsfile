@@ -1,43 +1,84 @@
 pipeline {
-    agent any
+    agent any // Use any available agent
+
+    environment {
+        CORONA_PAT = credentials('corona-pat')
+        CORONA_HOST = 'corona.cisco.com'
+        CORONA_USERNAME = 'tedgcisco.gen'
+        CORONA_ENGINEERING_CONTACT = 'tedg-corona-eng-mailer'
+        CORONA_SECURITY_CONTACT = 'tedg-corona-sec-mailer'
+        CORONA_PRODUCT_NAME = 'TEST - tedg - upload_spdx 2024-12-18'
+        CORONA_RELEASE_VERSION = '1.0.0'
+        CORONA_IMAGE_NAME = 'imageViaApi.01'
+        CORONA_SPDX_FILE_PATH = './bes-traceability-spdx.json'
+        DOCKER_IMAGE = 'upload_spdx'
+    }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout from SCM') {
             steps {
-                echo 'Checking out the source code...'
                 checkout scm
             }
         }
 
-        stage('Setup') {
+        stage('Setup - Install Dependencies') {
             steps {
-                script {
-                    echo 'Preparing environment...'
-                    // Install dependencies
-                    pip install requests pytest
-                }
+                sh '''
+                    python3 --version
+                    python3.11 -m pip install --upgrade pip
+                    pip -V
+                    pip install requests
+                    pip install pytest
+                    echo $PATH
+                    printenv | grep CORONA
+                '''
             }
         }
 
-        stage('Build') {
-            steps {
-                // Build upload_spdx.py
-                sh 'cd src'
-                sh 'python3 upload_spdx.py'
+//         stage('Test - Pytest') {
+//             steps {
+//                 // Activate the virtual environment
+//                 sh 'source upload_spdx_py_venv/bin/activate'
+//                 // Run tests
+//                 sh 'pytest test/test_upload_spdx.py'
             }
         }
 
-        stage('Test') {
+        stage('Build Docker Image as latest') {
             steps {
-                // Run tests
-                sh 'pytest test/test_upload_spdx.py'
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                sh 'docker build -t containers.cisco.com/tedg/$DOCKER_IMAGE .'
             }
         }
 
-        stage('Run - upload') {
+        stage('Push Docker Image to containers.cisco.com') {
             steps {
-                sh 'cd src'
-                sh 'python3 upload_spdx.py'
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                sh'docker push containers.cisco.com/tedg/$DOCKER_IMAGE'
+            }
+        }
+
+        stage('Pull Container from containers.cisco.com') {
+            steps {
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+
+                sh 'docker pull containers.cisco.com/tedg/$DOCKER_IMAGE'
+            }
+        }
+
+        stage('Run Container from containers.cisco.com') {
+            steps {
+                // Activate the virtual environment
+                sh 'source upload_spdx_py_venv/bin/activate'
+                sh 'printenv | grep CORONA'
+
+                //                 sh 'docker run -d --name upload-spdx-container containers.cisco.com/tedg/$DOCKER_IMAGE'
+                sh 'docker run containers.cisco.com/tedg/$DOCKER_IMAGE'
             }
         }
     }

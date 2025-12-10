@@ -1,0 +1,27 @@
+# Code Owners
+# These owners will be automatically requested for review when a PR affects these files
+
+# Global owners (all files)
+* @tedg-dev
+
+# Source code
+/src/ @tedg-dev
+
+# Tests
+/test/ @tedg-dev
+
+# Documentation
+/docs/ @tedg-dev
+README.md @tedg-dev
+
+# CI/CD workflows
+/.github/workflows/ @tedg-dev
+
+# Docker and deployment
+Dockerfile @tedg-dev
+docker-compose.yml @tedg-dev
+
+# Configuration
+pytest.ini @tedg-dev
+requirements.txt @tedg-dev
+setup_environment.sh @tedg-dev
