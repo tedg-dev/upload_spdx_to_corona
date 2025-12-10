@@ -34,10 +34,11 @@ The `upload_spdx.py` module provides a robust interface to Corona's REST API for
 
 - ✅ **Automated Setup**: One-command environment setup with `setup_environment.sh`
 - ✅ **Comprehensive Testing**: 29 unit tests with pytest and mocking
+- ✅ **High Code Coverage**: ≥90% code coverage enforced in CI/CD
 - ✅ **Docker Support**: Containerized deployment with automated builds
+- ✅ **GitHub Actions CI/CD**: Full automation with linting, testing, security scanning
 - ✅ **Error Handling**: Robust error handling with retry logic for transient failures
 - ✅ **Configuration**: Environment variable based configuration with sensible defaults
-- ✅ **CI/CD Ready**: Jenkins pipeline configuration included
 - ✅ **Logging**: Detailed logging for debugging and monitoring
 
 ## Prerequisites
@@ -251,10 +252,26 @@ pytest test/test_upload_spdx.py::TestSpdxManager -v
 
 ### Test Coverage
 
+**Coverage Requirement**: ≥90%
+
+The project enforces a minimum code coverage of 90% in CI/CD pipelines.
+
 ```bash
 # Run tests with coverage report
-pytest test/test_upload_spdx.py --cov=src --cov-report=html
+pytest test/test_upload_spdx.py --cov=src --cov-report=html --cov-report=term
+
+# View coverage in browser
+open htmlcov/index.html
+
+# Check if coverage meets 90% requirement
+pytest test/test_upload_spdx.py --cov=src --cov-fail-under=90
 ```
+
+**Coverage Features**:
+- ✅ Enforced in CI/CD (fails if below 90%)
+- ✅ Coverage reports posted on PRs automatically
+- ✅ HTML reports uploaded as artifacts
+- ✅ Codecov integration for tracking trends
 
 ### Test Summary
 

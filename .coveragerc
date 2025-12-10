@@ -1,0 +1,33 @@
+[run]
+source = src
+omit = 
+    */tests/*
+    */test/*
+    */__pycache__/*
+    */site-packages/*
+    */venv/*
+    */upload_spdx_py_env/*
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+sort = Cover
+
+# Fail if coverage is below 90%
+fail_under = 90
+
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstract
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml
