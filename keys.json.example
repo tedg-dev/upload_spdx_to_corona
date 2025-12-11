@@ -1,0 +1,11 @@
+{
+  "CORONA_PAT": "your_corona_pat_token_here",
+  "CORONA_HOST": "corona.cisco.com",
+  "CORONA_USERNAME": "your_username_here",
+  "CORONA_SECURITY_CONTACT": "security@example.com",
+  "CORONA_ENGINEERING_CONTACT": "engineering@example.com",
+  "CORONA_PRODUCT_NAME": "your_product_name",
+  "CORONA_RELEASE_VERSION": "1.0.0",
+  "CORONA_IMAGE_NAME": "your_image_name",
+  "CORONA_SPDX_FILE_PATH": "./your-spdx-file.json"
+}

@@ -9,12 +9,13 @@ class CoronaConfig:
     @staticmethod
     def get_corona_pat():
         """Get Corona Personal Access Token from environment."""
-        return os.getenv(
-            'CORONA_PAT',
-            'corona_eyJhbGciOiJIUzI1NiJ9_eyJuYmYiOjE3MzEwOTA5NDksImlhdCI6MTczMTA5M'
-            'Dk0OSwiZXhwIjoxNzM4ODY2OTQ5LCJwYXQiOnsibmFtZSI6InRlZGdjaXNjby5nZW5A'
-            'Y2lzY28uY29tIn0sImp0aSI6MTA1Nn0_9YIqxLblw1thQHKzR2S6gxysWLlNqC7K1BffLrPIQm8'
-        )
+        pat = os.getenv('CORONA_PAT')
+        if not pat:
+            raise ValueError(
+                "CORONA_PAT environment variable is required. "
+                "Please set it before running."
+            )
+        return pat
 
     @staticmethod
     def get_host():
@@ -24,7 +25,13 @@ class CoronaConfig:
     @staticmethod
     def get_user_name():
         """Get Corona username from environment."""
-        return os.getenv('CORONA_USERNAME', 'tedgcisco.gen')
+        username = os.getenv('CORONA_USERNAME')
+        if not username:
+            raise ValueError(
+                "CORONA_USERNAME environment variable is required. "
+                "Please set it before running."
+            )
+        return username
 
     @staticmethod
     def get_security_contact():
@@ -39,17 +46,35 @@ class CoronaConfig:
     @staticmethod
     def get_product_name():
         """Get product name from environment."""
-        return os.getenv('CORONA_PRODUCT_NAME', 'tedg test 2024-11-20')
+        product = os.getenv('CORONA_PRODUCT_NAME')
+        if not product:
+            raise ValueError(
+                "CORONA_PRODUCT_NAME environment variable is required. "
+                "Please set it before running."
+            )
+        return product
 
     @staticmethod
     def get_release_version():
         """Get release version from environment."""
-        return os.getenv('CORONA_RELEASE_VERSION', '1.0.20')
+        version = os.getenv('CORONA_RELEASE_VERSION')
+        if not version:
+            raise ValueError(
+                "CORONA_RELEASE_VERSION environment variable is required. "
+                "Please set it before running."
+            )
+        return version
 
     @staticmethod
     def get_image_name():
         """Get image name from environment."""
-        return os.getenv('CORONA_IMAGE_NAME', 'test imageViaApi.20')
+        image = os.getenv('CORONA_IMAGE_NAME')
+        if not image:
+            raise ValueError(
+                "CORONA_IMAGE_NAME environment variable is required. "
+                "Please set it before running."
+            )
+        return image
 
     @staticmethod
     def get_spdx_file_path():
