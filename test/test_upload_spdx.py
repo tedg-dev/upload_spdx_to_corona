@@ -10,6 +10,9 @@ import requests
 from unittest import mock
 from unittest.mock import mock_open
 from requests.exceptions import RequestException, HTTPError
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 from upload_spdx import (
     CoronaError,
     CoronaConfig,
