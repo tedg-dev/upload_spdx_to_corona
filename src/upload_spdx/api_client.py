@@ -105,35 +105,16 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                # Use appropriate content type based on what's passed
-                if files:
-                    # File upload with optional data
-                    response = requests.request(
-                        method,
-                        url,
-                        headers=headers,
-                        data=data,
-                        files=files,
-                        timeout=MAX_REQ_TIMEOUT
-                    )
-                elif data and isinstance(data, dict) and any(isinstance(v, str) and len(v) > 1000 for v in data.values()):
-                    # Large string values (like SPDX content) - use form data
-                    response = requests.request(
-                        method,
-                        url,
-                        headers=headers,
-                        data=data,
-                        timeout=MAX_REQ_TIMEOUT
-                    )
-                else:
-                    # Normal API calls use JSON
-                    response = requests.request(
-                        method,
-                        url,
-                        headers=headers,
-                        json=data,
-                        timeout=MAX_REQ_TIMEOUT
-                    )
+                # Simple logic: files use data=, everything else uses json=
+                response = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=data if not files else None,
+                    data=data if files else None,
+                    files=files,
+                    timeout=MAX_REQ_TIMEOUT
+                )
                 response.raise_for_status()
                 return response.json()
 
