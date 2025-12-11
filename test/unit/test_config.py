@@ -13,10 +13,10 @@ def test_get_corona_pat_from_env():
 
 
 def test_get_corona_pat_default():
-    """Test CoronaConfig.get_corona_pat() with default value."""
+    """Test CoronaConfig.get_corona_pat() raises error when not set."""
     with mock.patch.dict(os.environ, {}, clear=True):
-        pat = CoronaConfig.get_corona_pat()
-        assert pat.startswith('corona_eyJ')
+        with pytest.raises(ValueError, match="CORONA_PAT environment variable is required"):
+            CoronaConfig.get_corona_pat()
 
 
 def test_get_host_from_env():
@@ -38,9 +38,10 @@ def test_get_user_name_from_env():
 
 
 def test_get_user_name_default():
-    """Test CoronaConfig.get_user_name() with default value."""
+    """Test CoronaConfig.get_user_name() raises error when not set."""
     with mock.patch.dict(os.environ, {}, clear=True):
-        assert CoronaConfig.get_user_name() == 'tedgcisco.gen'
+        with pytest.raises(ValueError, match="CORONA_USERNAME"):
+            CoronaConfig.get_user_name()
 
 
 def test_get_security_contact_from_env():
@@ -78,9 +79,10 @@ def test_get_product_name_from_env():
 
 
 def test_get_product_name_default():
-    """Test CoronaConfig.get_product_name() with default value."""
+    """Test CoronaConfig.get_product_name() raises error when not set."""
     with mock.patch.dict(os.environ, {}, clear=True):
-        assert CoronaConfig.get_product_name() == 'tedg test 2024-11-20'
+        with pytest.raises(ValueError, match="CORONA_PRODUCT_NAME"):
+            CoronaConfig.get_product_name()
 
 
 def test_get_release_version_from_env():
@@ -91,9 +93,10 @@ def test_get_release_version_from_env():
 
 
 def test_get_release_version_default():
-    """Test CoronaConfig.get_release_version() with default value."""
+    """Test CoronaConfig.get_release_version() raises error when not set."""
     with mock.patch.dict(os.environ, {}, clear=True):
-        assert CoronaConfig.get_release_version() == '1.0.20'
+        with pytest.raises(ValueError, match="CORONA_RELEASE_VERSION"):
+            CoronaConfig.get_release_version()
 
 
 def test_get_image_name_from_env():
@@ -104,9 +107,10 @@ def test_get_image_name_from_env():
 
 
 def test_get_image_name_default():
-    """Test CoronaConfig.get_image_name() with default value."""
+    """Test CoronaConfig.get_image_name() raises error when not set."""
     with mock.patch.dict(os.environ, {}, clear=True):
-        assert CoronaConfig.get_image_name() == 'test imageViaApi.20'
+        with pytest.raises(ValueError, match="CORONA_IMAGE_NAME"):
+            CoronaConfig.get_image_name()
 
 
 def test_get_spdx_file_path_from_env():

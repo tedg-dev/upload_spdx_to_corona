@@ -99,6 +99,8 @@ dmypy.json
 # Security
 *.pem
 *.key
+keys.json
+key.json
 secrets.yml
 .secrets
 
