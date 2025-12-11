@@ -147,12 +147,15 @@ if python -c "import upload_spdx" 2>/dev/null; then
     PKG_INSTALLED=true
 fi
 
-if [ "$DEPS_INSTALLED" = true ] && [ "$PKG_INSTALLED" = true ]; then
+if [ "$DEPS_INSTALLED" = true ] && [ "$PKG_INSTALLED" = true ] && [ "$1" != "--force-install" ]; then
     echo "✅ Dependencies and package already installed"
-    if [ "$1" != "--force-install" ]; then
-        echo "⏭️  Skipping installation (use --force-install to reinstall)"
-        SKIP_INSTALL=true
-    fi
+    echo "⏭️  Skipping installation (use --force-install to reinstall)"
+    SKIP_INSTALL=true
+fi
+
+if [ "$1" = "--force-install" ]; then
+    echo "🔄 Force reinstalling all dependencies and package..."
+    SKIP_INSTALL=false
 fi
 
 if [ "$SKIP_INSTALL" != true ]; then
