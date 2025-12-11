@@ -10,6 +10,9 @@ import requests
 from unittest import mock
 from unittest.mock import mock_open
 from requests.exceptions import RequestException, HTTPError
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 from upload_spdx import (
     CoronaError,
     CoronaConfig,
@@ -413,7 +416,7 @@ class TestImageManager:
         # Mocking response missing 'id' field
         mock_make_authenticated_request.return_value = {}
 
-        with pytest.raises(CoronaError, match=f"Unexpected response structure while fetching image '{IMAGE_NAME}'"):
+        with pytest.raises(CoronaError, match=f"Failed to create image '{IMAGE_NAME}'. No ID in response."):
             image_manager._create_image(PRODUCT_ID, RELEASE_ID, IMAGE_NAME)
 
 

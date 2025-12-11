@@ -9,18 +9,16 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
+# Copy requirements.txt and install dependencies
 COPY requirements.txt /app/
 # Copy the SPDX file into the container at /app - TEMP FOR TESTING
 COPY bes-traceability-spdx.json /app/
-# Copy the application code into the container
-COPY src/upload_spdx.py /app/upload_spdx.py
+# Copy the application package into the container
+COPY src/upload_spdx /app/upload_spdx
 
 # Upgrade pip & Install dependency packages specified in requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Run the Python script when the container launches
-ENTRYPOINT ["python3"]
-CMD ["upload_spdx.py"]
-#ENTRYPOINT ["python3", "upload_spdx.py"]
+# Run the Python package when the container launches
+ENTRYPOINT ["python3", "-m", "upload_spdx"]

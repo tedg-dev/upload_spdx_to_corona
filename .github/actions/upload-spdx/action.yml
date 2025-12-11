@@ -1,0 +1,216 @@
+name: 'Upload SPDX to Corona'
+description: 'Upload SPDX documents to Cisco Corona platform'
+author: 'tedg-dev'
+
+inputs:
+  corona-pat:
+    description: 'Corona Personal Access Token for authentication'
+    required: true
+  
+  product-name:
+    description: 'Product name in Corona'
+    required: true
+  
+  release-version:
+    description: 'Release version string'
+    required: true
+  
+  image-name:
+    description: 'Image name in Corona'
+    required: true
+  
+  spdx-file-path:
+    description: 'Path to SPDX JSON file (relative to workspace)'
+    required: true
+    default: './spdx.json'
+  
+  corona-host:
+    description: 'Corona host domain'
+    required: false
+    default: 'corona.cisco.com'
+  
+  corona-username:
+    description: 'Corona username (typically ends in .gen)'
+    required: false
+    default: ''
+  
+  security-contact:
+    description: 'Security contact email/mailer'
+    required: false
+    default: 'upload_spdx_mailer'
+  
+  engineering-contact:
+    description: 'Engineering contact email/mailer'
+    required: false
+    default: 'upload_spdx_mailer'
+  
+  verbose:
+    description: 'Enable verbose logging'
+    required: false
+    default: 'false'
+  
+  method:
+    description: 'Execution method: docker or python'
+    required: false
+    default: 'docker'
+
+outputs:
+  product-id:
+    description: 'Product ID in Corona'
+    value: ${{ steps.upload.outputs.product-id }}
+  
+  release-id:
+    description: 'Release ID in Corona'
+    value: ${{ steps.upload.outputs.release-id }}
+  
+  image-id:
+    description: 'Image ID in Corona'
+    value: ${{ steps.upload.outputs.image-id }}
+  
+  status:
+    description: 'Upload status (success or failure)'
+    value: ${{ steps.upload.outputs.status }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        echo "::group::Validating inputs"
+        
+        if [ -z "${{ inputs.corona-pat }}" ]; then
+          echo "::error::corona-pat is required"
+          exit 1
+        fi
+        
+        if [ ! -f "${{ inputs.spdx-file-path }}" ]; then
+          echo "::error::SPDX file not found: ${{ inputs.spdx-file-path }}"
+          ls -la $(dirname "${{ inputs.spdx-file-path }}")
+          exit 1
+        fi
+        
+        echo "✅ Product: ${{ inputs.product-name }}"
+        echo "✅ Release: ${{ inputs.release-version }}"
+        echo "✅ Image: ${{ inputs.image-name }}"
+        echo "✅ SPDX file: ${{ inputs.spdx-file-path }} ($(stat -f%z "${{ inputs.spdx-file-path }}" 2>/dev/null || stat -c%s "${{ inputs.spdx-file-path }}") bytes)"
+        echo "✅ Corona host: ${{ inputs.corona-host }}"
+        echo "✅ Method: ${{ inputs.method }}"
+        echo "::endgroup::"
+    
+    - name: Upload via Docker
+      id: upload-docker
+      if: inputs.method == 'docker'
+      shell: bash
+      run: |
+        echo "::group::Building Docker image"
+        
+        # Build from the action's parent directory (repository root)
+        REPO_ROOT="${{ github.action_path }}/../../.."
+        
+        docker build -t upload_spdx:action "$REPO_ROOT"
+        
+        echo "::endgroup::"
+        echo "::group::Uploading SPDX to Corona"
+        
+        # Prepare verbose flag
+        VERBOSE_FLAG=""
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          VERBOSE_FLAG="--verbose"
+        fi
+        
+        # Prepare optional parameters
+        USERNAME_FLAG=""
+        if [ -n "${{ inputs.corona-username }}" ]; then
+          USERNAME_FLAG="--username ${{ inputs.corona-username }}"
+        fi
+        
+        # Run upload
+        docker run \
+          -e CORONA_PAT="${{ inputs.corona-pat }}" \
+          -e CORONA_HOST="${{ inputs.corona-host }}" \
+          -e CORONA_USERNAME="${{ inputs.corona-username }}" \
+          -e CORONA_SECURITY_CONTACT="${{ inputs.security-contact }}" \
+          -e CORONA_ENGINEERING_CONTACT="${{ inputs.engineering-contact }}" \
+          -v "${{ inputs.spdx-file-path }}:/app/spdx.json:ro" \
+          upload_spdx:action \
+            --product "${{ inputs.product-name }}" \
+            --release "${{ inputs.release-version }}" \
+            --image "${{ inputs.image-name }}" \
+            --spdx-file /app/spdx.json \
+            $USERNAME_FLAG \
+            $VERBOSE_FLAG
+        
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+        echo "::notice::✅ SPDX uploaded successfully to Corona"
+    
+    - name: Upload via Python
+      id: upload-python
+      if: inputs.method == 'python'
+      shell: bash
+      run: |
+        echo "::group::Setting up Python environment"
+        
+        REPO_ROOT="${{ github.action_path }}/../../.."
+        
+        # Install dependencies
+        pip install --upgrade pip --quiet
+        pip install -r "$REPO_ROOT/requirements.txt" --quiet
+        
+        echo "::endgroup::"
+        echo "::group::Uploading SPDX to Corona"
+        
+        # Prepare verbose flag
+        VERBOSE_FLAG=""
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          VERBOSE_FLAG="--verbose"
+        fi
+        
+        # Prepare optional parameters
+        USERNAME_FLAG=""
+        if [ -n "${{ inputs.corona-username }}" ]; then
+          USERNAME_FLAG="--username ${{ inputs.corona-username }}"
+        fi
+        
+        # Set environment variables
+        export CORONA_PAT="${{ inputs.corona-pat }}"
+        export CORONA_HOST="${{ inputs.corona-host }}"
+        export CORONA_USERNAME="${{ inputs.corona-username }}"
+        export CORONA_SECURITY_CONTACT="${{ inputs.security-contact }}"
+        export CORONA_ENGINEERING_CONTACT="${{ inputs.engineering-contact }}"
+        
+        # Add source to Python path and run
+        export PYTHONPATH="$REPO_ROOT/src:$PYTHONPATH"
+        
+        python -m upload_spdx \
+          --product "${{ inputs.product-name }}" \
+          --release "${{ inputs.release-version }}" \
+          --image "${{ inputs.image-name }}" \
+          --spdx-file "${{ inputs.spdx-file-path }}" \
+          $USERNAME_FLAG \
+          $VERBOSE_FLAG
+        
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+        echo "::notice::✅ SPDX uploaded successfully to Corona"
+    
+    - name: Set outputs
+      id: upload
+      shell: bash
+      run: |
+        if [ "${{ inputs.method }}" = "docker" ]; then
+          echo "status=${{ steps.upload-docker.outputs.status }}" >> $GITHUB_OUTPUT
+        else
+          echo "status=${{ steps.upload-python.outputs.status }}" >> $GITHUB_OUTPUT
+        fi
+        
+        # Note: product-id, release-id, image-id would need to be
+        # extracted from upload output in a real implementation
+        echo "product-id=unknown" >> $GITHUB_OUTPUT
+        echo "release-id=unknown" >> $GITHUB_OUTPUT
+        echo "image-id=unknown" >> $GITHUB_OUTPUT
+
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
