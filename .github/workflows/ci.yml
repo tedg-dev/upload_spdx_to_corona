@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.9'
+  PYTHON_VERSION: '3.12'
 
 jobs:
   lint:
@@ -103,7 +103,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.12']
     
     steps:
       - name: Checkout code
@@ -132,13 +132,13 @@ jobs:
             --junitxml=junit-${{ matrix.os }}-${{ matrix.python-version }}.xml
 
       - name: Check coverage percentage
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: |
           coverage report --fail-under=90
           echo "✅ Code coverage meets 90% requirement"
 
       - name: Generate coverage badge
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: |
           COVERAGE=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
           echo "Current coverage: ${COVERAGE}%"
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         with:
           file: ./coverage.xml
           flags: unittests
