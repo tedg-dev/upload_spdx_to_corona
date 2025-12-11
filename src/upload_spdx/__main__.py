@@ -41,14 +41,13 @@ Examples:
   export CORONA_PAT="your_pat"
   python -m upload_spdx
   
-  # Using CLI arguments (overrides env vars)
+  # Using CLI arguments (ALL values in quotes for consistency)
+  python -m upload_spdx --pat "your_pat" --username "your_user" \\
+    --product "My Product" --release "1.0.0" --image "My Image" \\
+    --spdx-file "./path/to/spdx.json"
+  
+  # Minimal example with quotes
   python -m upload_spdx --product "My Product" --release "1.0.0"
-  
-  # Docker with env vars
-  docker run -e CORONA_PAT="..." upload_spdx:latest
-  
-  # Docker with CLI args
-  docker run upload_spdx:latest --product "My Product"
         """
     )
     
