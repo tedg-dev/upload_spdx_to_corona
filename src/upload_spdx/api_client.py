@@ -105,14 +105,34 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                response = requests.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=data,
-                    files=files,
-                    timeout=MAX_REQ_TIMEOUT
-                )
+                # Use 'data' for form encoding when files not present,
+                # 'json' for JSON body when no files
+                if files:
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        files=files,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                elif data and not files:
+                    # For SPDX uploads without files, use form data
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                else:
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        json=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
                 response.raise_for_status()
                 return response.json()
 

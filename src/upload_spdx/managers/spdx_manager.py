@@ -41,6 +41,10 @@ class SpdxManager(CoronaAPIClient):
         except FileNotFoundError:
             raise CoronaError(f"SPDX file '{spdx_file_path}' not found.")
 
+        # DEBUG: Log what we're sending
+        logger.debug(f">>>SPDX_DATA>>> spdx_version being sent: {spdx_data.get('spdx_version')}")
+        logger.debug(f">>>SPDX_DATA>>> Full data keys: {list(spdx_data.keys())}")
+
         # First, POST the JSON data with ignore parameters
         res_json = self.make_authenticated_request(
             'POST',
