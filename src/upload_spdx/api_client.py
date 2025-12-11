@@ -105,8 +105,9 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                # Use 'data' for form encoding when files not present,
-                # 'json' for JSON body when no files
+                # SPDX uploads need form data, not JSON
+                use_form_data = 'spdx.json' in endpoint
+                
                 if files:
                     response = requests.request(
                         method,
@@ -116,8 +117,8 @@ class CoronaAPIClient:
                         files=files,
                         timeout=MAX_REQ_TIMEOUT
                     )
-                elif data and not files:
-                    # For SPDX uploads without files, use form data
+                elif use_form_data and data:
+                    # SPDX endpoints require form-encoded data
                     response = requests.request(
                         method,
                         url,
@@ -126,6 +127,7 @@ class CoronaAPIClient:
                         timeout=MAX_REQ_TIMEOUT
                     )
                 else:
+                    # All other endpoints use JSON
                     response = requests.request(
                         method,
                         url,
