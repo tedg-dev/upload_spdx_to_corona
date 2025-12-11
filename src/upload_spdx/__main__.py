@@ -145,8 +145,8 @@ def main():
         image_manager = ImageManager(host, user_name)
         spdx_manager = SpdxManager(host, user_name)
 
-        msg = (f"Adding SPDX '{spdx_file_path}' to '{product_name}' "
-               f"v'{release_version}', image '{image_name}')\n")
+        msg = (f"Adding SPDX {spdx_file_path} to product {product_name} "
+               f"version {release_version}, image {image_name}\n")
         logger.info(msg)
 
         # Operations
@@ -157,8 +157,8 @@ def main():
             product_id, release_id, image_name)
         spdx_manager.update_or_add_spdx(image_id, spdx_file_path)
 
-        msg = (f"SPDX added to '{product_name}' v'{release_version}', "
-               f"image '{image_name}' ({image_id}) successfully.\n")
+        msg = (f"SPDX added to product {product_name} version {release_version}, "
+               f"image {image_name} (ID: {image_id}) successfully.\n")
         logger.info(msg)
 
     except CoronaError as e:
