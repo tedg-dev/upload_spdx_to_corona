@@ -45,11 +45,12 @@ class SpdxManager(CoronaAPIClient):
         logger.debug(f">>>SPDX_DATA>>> spdx_version being sent: {spdx_data.get('spdx_version')}")
         logger.debug(f">>>SPDX_DATA>>> Full data keys: {list(spdx_data.keys())}")
 
-        # First, POST the JSON data with ignore parameters
+        # First, POST form-encoded data with ignore parameters
         res_json = self.make_authenticated_request(
             'POST',
             f'api/v2/images/{image_id}/spdx.json',
-            data=spdx_data
+            data=spdx_data,
+            use_json=False  # Use form encoding, not JSON
         )
 
         # Then, POST the file itself

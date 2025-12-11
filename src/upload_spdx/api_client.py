@@ -79,7 +79,7 @@ class CoronaAPIClient:
         return self.token
 
     def make_authenticated_request(self, method, endpoint, data=None,
-                                    files=None, retries=3):
+                                    files=None, use_json=True, retries=3):
         """
         Helper function to make authenticated API requests with retry.
 
@@ -105,16 +105,35 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                # Simple logic: files use data=, everything else uses json=
-                response = requests.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=data if not files else None,
-                    data=data if files else None,
-                    files=files,
-                    timeout=MAX_REQ_TIMEOUT
-                )
+                # Use json= or data= based on parameters
+                if files:
+                    # File upload
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        files=files,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                elif use_json:
+                    # JSON body
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        json=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                else:
+                    # Form-encoded data
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
                 response.raise_for_status()
                 return response.json()
 
