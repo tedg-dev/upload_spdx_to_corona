@@ -3,275 +3,208 @@
 ###############################################################################
 # setup_environment.sh
 #
-# This script sets up the complete environment for the upload_spdx_to_corona 
-# project including:
-# - Python virtual environment creation
-# - Installation of all required packages (requests, pytest)
-# - Docker daemon verification and startup
-# - Docker image build
-# - Optional Docker container run
+# Environment setup script for upload_spdx_to_corona project.
+# Supports smart dependency management and testing.
 #
-# Author: Generated for Ted Gauthier
-# Date: 2024-12-10
+# Usage:
+#   ./setup_environment.sh                 Setup environment
+#   ./setup_environment.sh --test          Run tests with coverage
+#   ./setup_environment.sh --coverage      Generate and open coverage report
+#   ./setup_environment.sh --force-install Force reinstall dependencies
+#
+# Author: Ted Gauthier
+# Updated: 2024-12-11
 ###############################################################################
 
-set -e  # Exit on any error
+set -e
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+VENV_DIR="upload_spdx_py_env"
+REQUIRED_MAJOR=3
+REQUIRED_MINOR=12
 
-# Project configuration
-VENV_NAME="upload_spdx_py_env"
-PYTHON_CMD="python3"
-DOCKER_IMAGE_NAME="upload_spdx"
-DOCKER_TAG="latest"
+echo "======================================================================"
+echo "Upload SPDX to Corona - Environment Setup"
+echo "======================================================================"
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  Upload SPDX to Corona - Setup Script${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-
-###############################################################################
-# 1. Python Virtual Environment Setup
-###############################################################################
-echo -e "${GREEN}[1/5] Setting up Python virtual environment...${NC}"
-
-# Check if Python 3 is available
-if ! command -v $PYTHON_CMD &> /dev/null; then
-    echo -e "${RED}Error: Python 3 is not installed or not in PATH${NC}"
-    exit 1
-fi
-
-PYTHON_VERSION=$($PYTHON_CMD --version 2>&1)
-echo -e "  ${BLUE}✓${NC} Found: $PYTHON_VERSION"
-
-# Create virtual environment if it doesn't exist
-if [ ! -d "$VENV_NAME" ]; then
-    echo -e "  Creating virtual environment: $VENV_NAME"
-    $PYTHON_CMD -m venv $VENV_NAME
-    echo -e "  ${GREEN}✓${NC} Virtual environment created"
-else
-    echo -e "  ${YELLOW}✓${NC} Virtual environment already exists"
-fi
-
-# Activate virtual environment
-echo -e "  Activating virtual environment..."
-source $VENV_NAME/bin/activate
-
-# Verify activation
-if [ -z "$VIRTUAL_ENV" ]; then
-    echo -e "${RED}Error: Failed to activate virtual environment${NC}"
-    exit 1
-fi
-echo -e "  ${GREEN}✓${NC} Virtual environment activated: $VIRTUAL_ENV"
-
-###############################################################################
-# 2. Upgrade pip
-###############################################################################
-echo ""
-echo -e "${GREEN}[2/5] Upgrading pip...${NC}"
-pip install --upgrade pip --quiet
-PIP_VERSION=$(pip --version)
-echo -e "  ${GREEN}✓${NC} $PIP_VERSION"
-
-###############################################################################
-# 3. Install Required Packages
-###############################################################################
-echo ""
-echo -e "${GREEN}[3/5] Installing required Python packages...${NC}"
-
-# Install from requirements.txt
-if [ -f "requirements.txt" ]; then
-    echo -e "  Installing packages from requirements.txt..."
-    pip install -r requirements.txt --quiet
-    echo -e "  ${GREEN}✓${NC} Installed: requests"
-else
-    echo -e "  ${YELLOW}Warning: requirements.txt not found${NC}"
-    echo -e "  Installing requests manually..."
-    pip install requests --quiet
-    echo -e "  ${GREEN}✓${NC} Installed: requests"
-fi
-
-# Install pytest and testing dependencies
-echo -e "  Installing testing packages..."
-pip install pytest pytest-cov pytest-mock --quiet
-echo -e "  ${GREEN}✓${NC} Installed: pytest, pytest-cov, pytest-mock"
-
-# Display installed packages
-echo ""
-echo -e "  ${BLUE}Installed Python packages:${NC}"
-pip list | grep -E "(requests|pytest)" | sed 's/^/    /'
-
-###############################################################################
-# 4. Docker Setup and Verification
-###############################################################################
-echo ""
-echo -e "${GREEN}[4/5] Checking Docker...${NC}"
-
-# Check if Docker is installed
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Error: Docker is not installed${NC}"
-    echo -e "${YELLOW}Please install Docker Desktop for Mac from: https://www.docker.com/products/docker-desktop${NC}"
-    exit 1
-fi
-
-DOCKER_VERSION=$(docker --version)
-echo -e "  ${BLUE}✓${NC} Found: $DOCKER_VERSION"
-
-# Check if Docker daemon is running
-echo -e "  Checking Docker daemon status..."
-if ! docker info &> /dev/null; then
-    echo -e "  ${YELLOW}Docker daemon is not running. Attempting to start...${NC}"
+# Function to check Python version
+check_python_version() {
+    local python_cmd=$1
+    if ! command -v "$python_cmd" &> /dev/null; then
+        return 1
+    fi
     
-    # Try to start Docker Desktop on macOS
-    if [ "$(uname)" == "Darwin" ]; then
-        echo -e "  Starting Docker Desktop..."
-        open -a Docker
-        
-        # Wait for Docker to start (max 60 seconds)
-        echo -e "  Waiting for Docker daemon to start (this may take up to 60 seconds)..."
-        counter=0
-        while ! docker info &> /dev/null && [ $counter -lt 60 ]; do
-            sleep 2
-            counter=$((counter + 2))
-            printf "."
+    local version=$($python_cmd --version 2>&1 | awk '{print $2}')
+    local major=$(echo "$version" | cut -d. -f1)
+    local minor=$(echo "$version" | cut -d. -f2)
+    
+    if [ "$major" -ge $REQUIRED_MAJOR ] && [ "$minor" -ge $REQUIRED_MINOR ]; then
+        echo "$python_cmd:$version"
+        return 0
+    fi
+    return 1
+}
+
+# Check if already in virtual environment
+if [ -n "$VIRTUAL_ENV" ]; then
+    echo "✅ Already in virtual environment: $VIRTUAL_ENV"
+    PYTHON_CMD="python"
+    IN_VENV=true
+else
+    IN_VENV=false
+    
+    # Try to find suitable Python version
+    echo "🔍 Detecting Python version..."
+    
+    PYTHON_CMD=""
+    for cmd in python3.13 python3.12 python3.11 python3 python; do
+        if result=$(check_python_version "$cmd"); then
+            PYTHON_CMD=$(echo "$result" | cut -d: -f1)
+            PYTHON_VERSION=$(echo "$result" | cut -d: -f2)
+            echo "✅ Found suitable Python: $PYTHON_CMD ($PYTHON_VERSION)"
+            break
+        fi
+    done
+    
+    if [ -z "$PYTHON_CMD" ]; then
+        echo "❌ Error: Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR}+ is required but not found."
+        echo "   Current Python versions available:"
+        for cmd in python3 python; do
+            if command -v "$cmd" &> /dev/null; then
+                echo "   - $cmd: $($cmd --version 2>&1)"
+            fi
         done
         echo ""
-        
-        if docker info &> /dev/null; then
-            echo -e "  ${GREEN}✓${NC} Docker daemon started successfully"
-        else
-            echo -e "${RED}Error: Failed to start Docker daemon${NC}"
-            echo -e "${YELLOW}Please start Docker Desktop manually and run this script again${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${RED}Error: Docker daemon is not running${NC}"
-        echo -e "${YELLOW}Please start Docker manually and run this script again${NC}"
+        echo "   Please install Python ${REQUIRED_MAJOR}.${REQUIRED_MINOR} or later:"
+        echo "   https://www.python.org/downloads/"
         exit 1
     fi
-else
-    echo -e "  ${GREEN}✓${NC} Docker daemon is running"
 fi
 
-###############################################################################
-# 5. Build Docker Image
-###############################################################################
-echo ""
-echo -e "${GREEN}[5/5] Building Docker image...${NC}"
-
-if [ ! -f "Dockerfile" ]; then
-    echo -e "${RED}Error: Dockerfile not found in current directory${NC}"
-    exit 1
-fi
-
-echo -e "  Building image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
-echo -e "  ${YELLOW}This may take a few minutes...${NC}"
-
-if docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} . ; then
-    echo -e "  ${GREEN}✓${NC} Docker image built successfully"
-    
-    # Display image info
-    echo ""
-    echo -e "  ${BLUE}Docker image details:${NC}"
-    docker images ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} | sed 's/^/    /'
-else
-    echo -e "${RED}Error: Failed to build Docker image${NC}"
-    exit 1
-fi
-
-###############################################################################
-# Setup Complete
-###############################################################################
-echo ""
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  Setup Complete!${NC}"
-echo -e "${GREEN}========================================${NC}"
-echo ""
-echo -e "${BLUE}Summary:${NC}"
-echo -e "  • Virtual environment: ${GREEN}$VENV_NAME${NC}"
-echo -e "  • Python packages: ${GREEN}requests, pytest, pytest-cov, pytest-mock${NC}"
-echo -e "  • Docker image: ${GREEN}${DOCKER_IMAGE_NAME}:${DOCKER_TAG}${NC}"
-echo ""
-echo -e "${BLUE}Next steps:${NC}"
-echo -e "  1. Activate virtual environment:"
-echo -e "     ${YELLOW}source $VENV_NAME/bin/activate${NC}"
-echo ""
-echo -e "  2. Run tests:"
-echo -e "     ${YELLOW}pytest test/test_upload_spdx.py -v${NC}"
-echo ""
-echo -e "  3. Run application locally:"
-echo -e "     ${YELLOW}python src/upload_spdx.py${NC}"
-echo ""
-echo -e "  4. Run application in Docker container:"
-echo -e "     ${YELLOW}docker run -e CORONA_PAT=\$CORONA_PAT \\${NC}"
-echo -e "     ${YELLOW}              -e CORONA_HOST=\$CORONA_HOST \\${NC}"
-echo -e "     ${YELLOW}              -e CORONA_USERNAME=\$CORONA_USERNAME \\${NC}"
-echo -e "     ${YELLOW}              ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}${NC}"
-echo ""
-
-# Ask user if they want to run tests now
-read -p "Would you like to run the PyTest test suite now? (y/n): " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo ""
-    echo -e "${BLUE}Running PyTest test suite...${NC}"
-    echo -e "${BLUE}========================================${NC}"
-    pytest test/test_upload_spdx.py -v
-    echo ""
-fi
-
-# Ask user if they want to run the Docker container now
-read -p "Would you like to run the Docker container now? (y/n): " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    # Check for required environment variables
-    if [ -z "$CORONA_PAT" ] || [ -z "$CORONA_HOST" ] || [ -z "$CORONA_USERNAME" ]; then
-        echo ""
-        echo -e "${YELLOW}Warning: Required environment variables are not set${NC}"
-        echo -e "The following environment variables should be set:"
-        echo -e "  - CORONA_PAT"
-        echo -e "  - CORONA_HOST"
-        echo -e "  - CORONA_USERNAME"
-        echo -e "  - CORONA_PRODUCT_NAME (optional, has default)"
-        echo -e "  - CORONA_RELEASE_VERSION (optional, has default)"
-        echo -e "  - CORONA_IMAGE_NAME (optional, has default)"
-        echo ""
-        read -p "Continue with default values from CoronaConfig? (y/n): " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}Skipping Docker run. You can run it manually later.${NC}"
-            exit 0
+if [ "$IN_VENV" = false ]; then
+    if [ -d "$VENV_DIR" ]; then
+        echo "⚠️  Virtual environment already exists at '$VENV_DIR'"
+        
+        # Check if it's using compatible Python version
+        if [ -f "$VENV_DIR/bin/python" ]; then
+            VENV_PYTHON_VERSION=$("$VENV_DIR/bin/python" --version 2>&1 | awk '{print $2}')
+            VENV_MAJOR=$(echo "$VENV_PYTHON_VERSION" | cut -d. -f1)
+            VENV_MINOR=$(echo "$VENV_PYTHON_VERSION" | cut -d. -f2)
+            
+            if [ "$VENV_MAJOR" -ge $REQUIRED_MAJOR ] && [ "$VENV_MINOR" -ge $REQUIRED_MINOR ]; then
+                echo "✅ Existing venv uses Python $VENV_PYTHON_VERSION (compatible)"
+                SKIP_RECREATE=true
+            else
+                echo "⚠️  Existing venv uses Python $VENV_PYTHON_VERSION (incompatible)"
+                SKIP_RECREATE=false
+            fi
+        fi
+        
+        if [ "$SKIP_RECREATE" != true ]; then
+            read -p "   Do you want to recreate it? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                echo "🗑️  Removing existing virtual environment..."
+                rm -rf "$VENV_DIR"
+            else
+                echo "✅ Using existing virtual environment"
+            fi
         fi
     fi
     
-    echo ""
-    echo -e "${BLUE}Running Docker container...${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "📦 Creating virtual environment with $PYTHON_CMD..."
+        $PYTHON_CMD -m venv "$VENV_DIR"
+        echo "✅ Virtual environment created"
+    fi
     
-    # Build docker run command with environment variables if they exist
-    DOCKER_RUN_CMD="docker run"
-    
-    [ ! -z "$CORONA_PAT" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_PAT=$CORONA_PAT"
-    [ ! -z "$CORONA_HOST" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_HOST=$CORONA_HOST"
-    [ ! -z "$CORONA_USERNAME" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_USERNAME=$CORONA_USERNAME"
-    [ ! -z "$CORONA_ENGINEERING_CONTACT" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_ENGINEERING_CONTACT=$CORONA_ENGINEERING_CONTACT"
-    [ ! -z "$CORONA_SECURITY_CONTACT" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_SECURITY_CONTACT=$CORONA_SECURITY_CONTACT"
-    [ ! -z "$CORONA_PRODUCT_NAME" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_PRODUCT_NAME=$CORONA_PRODUCT_NAME"
-    [ ! -z "$CORONA_RELEASE_VERSION" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_RELEASE_VERSION=$CORONA_RELEASE_VERSION"
-    [ ! -z "$CORONA_IMAGE_NAME" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_IMAGE_NAME=$CORONA_IMAGE_NAME"
-    [ ! -z "$CORONA_SPDX_FILE_PATH" ] && DOCKER_RUN_CMD="$DOCKER_RUN_CMD -e CORONA_SPDX_FILE_PATH=$CORONA_SPDX_FILE_PATH"
-    
-    DOCKER_RUN_CMD="$DOCKER_RUN_CMD ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
-    
-    echo -e "Executing: ${YELLOW}$DOCKER_RUN_CMD${NC}"
-    echo ""
-    eval $DOCKER_RUN_CMD
-    echo ""
+    echo "🔌 Activating virtual environment..."
+    source "$VENV_DIR/bin/activate"
+else
+    echo "⏭️  Skipping virtual environment creation (already active)"
 fi
 
-echo -e "${GREEN}All done!${NC}"
+# Check if dependencies are already installed
+DEPS_INSTALLED=false
+PKG_INSTALLED=false
+
+if python -c "import requests, pytest, pytest_cov, pytest_mock" 2>/dev/null; then
+    DEPS_INSTALLED=true
+fi
+
+if python -c "import upload_spdx" 2>/dev/null; then
+    PKG_INSTALLED=true
+fi
+
+if [ "$DEPS_INSTALLED" = true ] && [ "$PKG_INSTALLED" = true ]; then
+    echo "✅ Dependencies and package already installed"
+    if [ "$1" != "--force-install" ]; then
+        echo "⏭️  Skipping installation (use --force-install to reinstall)"
+        SKIP_INSTALL=true
+    fi
+fi
+
+if [ "$SKIP_INSTALL" != true ]; then
+    echo "⬆️  Upgrading pip..."
+    pip install --upgrade pip --quiet
+    
+    if [ "$DEPS_INSTALLED" = false ]; then
+        echo "📥 Installing production dependencies..."
+        if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt --quiet
+        fi
+        
+        echo "📥 Installing development dependencies..."
+        pip install pytest pytest-cov pytest-mock --quiet
+    else
+        echo "✅ Core dependencies already present"
+    fi
+    
+    echo "📦 Installing package in development mode..."
+    pip install -e . --quiet
+    echo "✅ Package installed"
+fi
+
+echo ""
+echo "======================================================================"
+echo "✅ Environment setup complete!"
+echo "======================================================================"
+echo ""
+if [ "$IN_VENV" = false ]; then
+    echo "To activate the virtual environment, run:"
+    echo "  source $VENV_DIR/bin/activate"
+    echo ""
+fi
+echo "Available commands:"
+echo "  ./setup_environment.sh --test            Run tests with coverage"
+echo "  ./setup_environment.sh --coverage        Generate and open coverage report"
+echo "  ./setup_environment.sh --force-install   Force reinstall dependencies"
+echo ""
+
+if [ "$1" == "--test" ]; then
+    echo "======================================================================"
+    echo "Running Tests with Coverage"
+    echo "======================================================================"
+    pytest --cov=src/upload_spdx --cov-report=term-missing --cov-report=html --cov-fail-under=90 -v
+    echo ""
+    echo "✅ Tests completed!"
+    echo "📊 HTML coverage report generated in: htmlcov/index.html"
+elif [ "$1" == "--coverage" ]; then
+    echo "======================================================================"
+    echo "Generating Coverage Report"
+    echo "======================================================================"
+    pytest --cov=src/upload_spdx --cov-report=term-missing --cov-report=html -v
+    echo ""
+    echo "📊 HTML coverage report: htmlcov/index.html"
+    echo "📊 Opening coverage report in browser..."
+    if command -v open &> /dev/null; then
+        open htmlcov/index.html
+    elif command -v xdg-open &> /dev/null; then
+        xdg-open htmlcov/index.html
+    fi
+fi
+
+if [ "$IN_VENV" = false ]; then
+    echo ""
+    echo "To deactivate the virtual environment, run:"
+    echo "  deactivate"
+fi
