@@ -189,7 +189,7 @@ class CoronaAPIClient:
         }
         msg = error_messages.get(
             response.status_code,
-            f'Error {action}: {response.status_code} ({response.text})'
+            f'Error during {context}: {response.status_code} ({response.text})'
         )
         logger.fatal(msg)
         sys.exit(response.status_code)
