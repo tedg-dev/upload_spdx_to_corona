@@ -41,8 +41,12 @@ class SpdxManager(CoronaAPIClient):
                 # Extract spdx_version from the JSON content
                 import json
                 spdx_json = json.loads(spdx_content)
+                
+                # Check for spdxVersion at root or under 'sbom' key
                 if 'spdxVersion' in spdx_json:
                     spdx_data['spdx_version'] = spdx_json['spdxVersion']
+                elif 'sbom' in spdx_json and 'spdxVersion' in spdx_json['sbom']:
+                    spdx_data['spdx_version'] = spdx_json['sbom']['spdxVersion']
         except FileNotFoundError:
             raise CoronaError(f"SPDX file '{spdx_file_path}' not found.")
         except json.JSONDecodeError as e:
