@@ -64,11 +64,14 @@ class ImageManager(CoronaAPIClient):
         """
         data = {
             'image': {
-                'product_id': product_id,
-                'release_id': release_id,
                 'name': image_name,
+                'release_id': release_id,
+                'product_id': product_id,
                 'security_contact': CoronaConfig.get_security_contact(),
                 'engineering_contact': CoronaConfig.get_engineering_contact(),
+                'location_attributes': {},
+                'tags_attributes': [],
+                'scan_jobs_to_skip': []
             }
         }
         res_json = self.make_authenticated_request(

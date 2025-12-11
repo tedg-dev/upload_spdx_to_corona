@@ -27,18 +27,23 @@ class SpdxManager(CoronaAPIClient):
         msg = f"Uploading SPDX from '{spdx_file_path}' to image {image_id}"
         logger.info(msg)
 
+        spdx_data = {
+            'ignore_relationships': 'true',
+            'ignore_eo_compliant': 'true',
+            'ignore_validation': 'true',
+        }
         try:
             # Read SPDX file as JSON data
             with open(spdx_file_path, 'r') as f:
-                spdx_data = f.read()
+                spdx_data['data'] = f.read()
         except FileNotFoundError:
             raise CoronaError(f"SPDX file '{spdx_file_path}' not found.")
 
-        # First, POST the JSON data
+        # First, POST the JSON data with ignore parameters
         res_json = self.make_authenticated_request(
             'POST',
-            f'api/v2/images/{image_id}/spdx',
-            data={'data': spdx_data}
+            f'api/v2/images/{image_id}/spdx.json',
+            data=spdx_data
         )
 
         # Then, POST the file itself
