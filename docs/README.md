@@ -21,6 +21,29 @@ This directory contains detailed documentation for the upload_spdx_to_corona pro
   - Verification tests and results
   - Next steps and recommendations
 
+### GitHub and CI/CD
+
+- **[GITHUB_SETUP.md](GITHUB_SETUP.md)**
+  - Detailed GitHub repository setup guide
+  - Branch protection configuration
+  - Security features setup
+  - CI/CD workflow overview
+
+- **[GITHUB_NEXT_STEPS.md](GITHUB_NEXT_STEPS.md)**
+  - Complete post-setup guide
+  - Creating and working with PRs
+  - CI/CD workflow details
+  - Troubleshooting tips
+
+### Testing and Quality
+
+- **[CODE_COVERAGE.md](CODE_COVERAGE.md)**
+  - Code coverage requirements (≥90%)
+  - How coverage is enforced in CI/CD
+  - Running coverage locally
+  - Coverage best practices
+  - Troubleshooting coverage issues
+
 ## Quick Links
 
 ### Main Documentation
