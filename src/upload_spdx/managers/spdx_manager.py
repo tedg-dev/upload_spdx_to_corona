@@ -10,13 +10,14 @@ logger = logging.getLogger('upload_spdx')
 class SpdxManager(CoronaAPIClient):
     """Handle SPDX document operations."""
 
-    def update_or_add_spdx(self, image_id, spdx_file_path):
+    def update_or_add_spdx(self, image_id, spdx_file_path, spdx_version='SPDX-2.3'):
         """
         Upload or update SPDX document for an image.
 
         Args:
             image_id: ID of the image
             spdx_file_path: Path to the SPDX file
+            spdx_version: SPDX version (default: SPDX-2.3)
 
         Returns:
             dict: API response
@@ -31,7 +32,7 @@ class SpdxManager(CoronaAPIClient):
             'ignore_relationships': 'true',
             'ignore_eo_compliant': 'true',
             'ignore_validation': 'true',
-            'spdx_version': 'SPDX-2.3',  # Default to SPDX-2.3, supports future versions
+            'spdx_version': spdx_version,
         }
         try:
             # Read SPDX file content

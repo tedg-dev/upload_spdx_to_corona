@@ -93,6 +93,11 @@ Examples:
         '--spdx-file',
         help='Path to SPDX file (overrides CORONA_SPDX_FILE_PATH)'
     )
+    parser.add_argument(
+        '--spdx-version',
+        default='SPDX-2.3',
+        help='SPDX version (default: SPDX-2.3, supports 3.0+)'
+    )
     
     # Options
     parser.add_argument(
@@ -154,7 +159,7 @@ def main():
             product_id, release_version)
         image_id = image_manager.get_or_create_image(
             product_id, release_id, image_name)
-        spdx_manager.update_or_add_spdx(image_id, spdx_file_path)
+        spdx_manager.update_or_add_spdx(image_id, spdx_file_path, args.spdx_version)
 
         msg = (f"SPDX added to product {product_name} version {release_version}, "
                f"image {image_name} (ID: {image_id}) successfully.\n")
