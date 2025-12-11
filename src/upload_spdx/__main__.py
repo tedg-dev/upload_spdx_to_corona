@@ -41,14 +41,13 @@ Examples:
   export CORONA_PAT="your_pat"
   python -m upload_spdx
   
-  # Using CLI arguments (overrides env vars)
+  # Using CLI arguments (ALL values in quotes for consistency)
+  python -m upload_spdx --pat "your_pat" --username "your_user" \\
+    --product "My Product" --release "1.0.0" --image "My Image" \\
+    --spdx-file "./path/to/spdx.json"
+  
+  # Minimal example with quotes
   python -m upload_spdx --product "My Product" --release "1.0.0"
-  
-  # Docker with env vars
-  docker run -e CORONA_PAT="..." upload_spdx:latest
-  
-  # Docker with CLI args
-  docker run upload_spdx:latest --product "My Product"
         """
     )
     
@@ -93,6 +92,11 @@ Examples:
     parser.add_argument(
         '--spdx-file',
         help='Path to SPDX file (overrides CORONA_SPDX_FILE_PATH)'
+    )
+    parser.add_argument(
+        '--spdx-version',
+        default='SPDX-2.3',
+        help='SPDX version (default: SPDX-2.3, supports 3.0+)'
     )
     
     # Options
@@ -145,8 +149,8 @@ def main():
         image_manager = ImageManager(host, user_name)
         spdx_manager = SpdxManager(host, user_name)
 
-        msg = (f"Adding SPDX '{spdx_file_path}' to '{product_name}' "
-               f"v'{release_version}', image '{image_name}')\n")
+        msg = (f"Adding SPDX {spdx_file_path} to product {product_name} "
+               f"version {release_version}, image {image_name}\n")
         logger.info(msg)
 
         # Operations
@@ -155,10 +159,10 @@ def main():
             product_id, release_version)
         image_id = image_manager.get_or_create_image(
             product_id, release_id, image_name)
-        spdx_manager.update_or_add_spdx(image_id, spdx_file_path)
+        spdx_manager.update_or_add_spdx(image_id, spdx_file_path, args.spdx_version)
 
-        msg = (f"SPDX added to '{product_name}' v'{release_version}', "
-               f"image '{image_name}' ({image_id}) successfully.\n")
+        msg = (f"SPDX added to product {product_name} version {release_version}, "
+               f"image {image_name} (ID: {image_id}) successfully.\n")
         logger.info(msg)
 
     except CoronaError as e:

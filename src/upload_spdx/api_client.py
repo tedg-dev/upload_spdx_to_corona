@@ -79,7 +79,7 @@ class CoronaAPIClient:
         return self.token
 
     def make_authenticated_request(self, method, endpoint, data=None,
-                                    files=None, retries=3):
+                                    files=None, use_json=True, retries=3):
         """
         Helper function to make authenticated API requests with retry.
 
@@ -105,14 +105,35 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                response = requests.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=data,
-                    files=files,
-                    timeout=MAX_REQ_TIMEOUT
-                )
+                # Use json= or data= based on parameters
+                if files:
+                    # File upload
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        files=files,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                elif use_json:
+                    # JSON body
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        json=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
+                else:
+                    # Form-encoded data
+                    response = requests.request(
+                        method,
+                        url,
+                        headers=headers,
+                        data=data,
+                        timeout=MAX_REQ_TIMEOUT
+                    )
                 response.raise_for_status()
                 return response.json()
 
@@ -137,28 +158,38 @@ class CoronaAPIClient:
             f'{retries} attempts'
         )
 
-    def _handle_error(self, e, response, action):
+    def _handle_error(self, exception, response, context):
         """
-        Handle API errors for make_authenticated_request().
+        Handle errors from API requests.
 
         Args:
-            e: Exception that occurred
-            response: HTTP response object
-            action: Description of the action being performed
+            exception: The exception that occurred
+            response: The response object
+            context: Context about where the error occurred
+
+        Raises:
+            CoronaError: With detailed error message
         """
+        try:
+            error_json = response.json()
+            msg = (f'>>>TEST>>> e = {repr(str(exception))!r} \n'
+                   f'response = {repr(str(error_json))!r}')
+            logger.debug(msg)
+            
+            # Log the FULL error details
+            logger.error(f"API Error Details: {error_json}")
+        except:
+            logger.error(f"API Error (no JSON): {response.text}")
+
         error_messages = {
-            401: f'Unauthorized access while {action}. '
+            401: f'Unauthorized access while {context}. '
                  f'Invalid PAT or token.',
-            422: f'Invalid request during {action}. '
+            422: f'Invalid request during {context}. '
                  f'Ensure that the name is unique.',
         }
-        msg = (f">>_handle_error_TEST>> e = '{e}' \n"
-               f"response = '{response.json()}'")
-        logger.debug(msg)
-
         msg = error_messages.get(
             response.status_code,
-            f'Error {action}: {response.status_code} ({response.text})'
+            f'Error during {context}: {response.status_code} ({response.text})'
         )
         logger.fatal(msg)
         sys.exit(response.status_code)

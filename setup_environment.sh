@@ -6,17 +6,29 @@
 # Environment setup script for upload_spdx_to_corona project.
 # Supports smart dependency management and testing.
 #
+# IMPORTANT: This script must be SOURCED, not executed!
+#
 # Usage:
-#   ./setup_environment.sh                 Setup environment
-#   ./setup_environment.sh --test          Run tests with coverage
-#   ./setup_environment.sh --coverage      Generate and open coverage report
-#   ./setup_environment.sh --force-install Force reinstall dependencies
+#   source ./setup_environment.sh                 Setup and activate environment
+#   source ./setup_environment.sh --test          Run tests with coverage
+#   source ./setup_environment.sh --coverage      Generate coverage report
+#   source ./setup_environment.sh --force-install Force reinstall dependencies
 #
 # Author: Ted Gauthier
 # Updated: 2024-12-11
 ###############################################################################
 
-set -e
+# Check if script is being sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "❌ ERROR: This script must be SOURCED, not executed!"
+    echo ""
+    echo "Run this instead:"
+    echo "  source ./setup_environment.sh"
+    echo ""
+    echo "Or use the shorthand:"
+    echo "  . ./setup_environment.sh"
+    exit 1
+fi
 
 VENV_DIR="upload_spdx_py_env"
 REQUIRED_MAJOR=3
@@ -135,12 +147,15 @@ if python -c "import upload_spdx" 2>/dev/null; then
     PKG_INSTALLED=true
 fi
 
-if [ "$DEPS_INSTALLED" = true ] && [ "$PKG_INSTALLED" = true ]; then
+if [ "$DEPS_INSTALLED" = true ] && [ "$PKG_INSTALLED" = true ] && [ "$1" != "--force-install" ]; then
     echo "✅ Dependencies and package already installed"
-    if [ "$1" != "--force-install" ]; then
-        echo "⏭️  Skipping installation (use --force-install to reinstall)"
-        SKIP_INSTALL=true
-    fi
+    echo "⏭️  Skipping installation (use --force-install to reinstall)"
+    SKIP_INSTALL=true
+fi
+
+if [ "$1" = "--force-install" ]; then
+    echo "🔄 Force reinstalling all dependencies and package..."
+    SKIP_INSTALL=false
 fi
 
 if [ "$SKIP_INSTALL" != true ]; then
@@ -169,18 +184,18 @@ echo "======================================================================"
 echo "✅ Environment setup complete!"
 echo "======================================================================"
 echo ""
-if [ "$IN_VENV" = false ]; then
-    echo "To activate the virtual environment, run:"
-    echo "  source $VENV_DIR/bin/activate"
-    echo ""
-fi
+echo "🎉 Virtual environment is now ACTIVE in your current shell!"
+echo ""
 echo "Available commands:"
-echo "  ./setup_environment.sh --test            Run tests with coverage"
-echo "  ./setup_environment.sh --coverage        Generate and open coverage report"
-echo "  ./setup_environment.sh --force-install   Force reinstall dependencies"
+echo "  source ./setup_environment.sh --test            Run tests with coverage"
+echo "  source ./setup_environment.sh --coverage        Generate and open coverage report"
+echo "  source ./setup_environment.sh --force-install   Force reinstall dependencies"
+echo ""
+echo "To run the application:"
+echo "  python -m upload_spdx --help"
 echo ""
 
-if [ "$1" == "--test" ]; then
+if [ "$1" = "--test" ]; then
     echo "======================================================================"
     echo "Running Tests with Coverage"
     echo "======================================================================"
@@ -188,7 +203,7 @@ if [ "$1" == "--test" ]; then
     echo ""
     echo "✅ Tests completed!"
     echo "📊 HTML coverage report generated in: htmlcov/index.html"
-elif [ "$1" == "--coverage" ]; then
+elif [ "$1" = "--coverage" ]; then
     echo "======================================================================"
     echo "Generating Coverage Report"
     echo "======================================================================"
