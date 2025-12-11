@@ -28,14 +28,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
-      - name: Run setup_environment.sh
-        run: |
-          bash setup_environment.sh
-        env:
-          CORONA_PAT: ${{ secrets.CORONA_PAT }}
-          CORONA_HOST: ${{ secrets.CORONA_HOST }}
-          CORONA_USERNAME: ${{ secrets.CORONA_USERNAME }}
-
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
@@ -73,14 +65,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Run setup_environment.sh
-        run: |
-          bash setup_environment.sh
-        env:
-          CORONA_PAT: ${{ secrets.CORONA_PAT }}
-          CORONA_HOST: ${{ secrets.CORONA_HOST }}
-          CORONA_USERNAME: ${{ secrets.CORONA_USERNAME }}
 
       - name: Install dependencies
         run: |
@@ -130,14 +114,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-
-      - name: Run setup_environment.sh
-        run: |
-          bash setup_environment.sh
-        env:
-          CORONA_PAT: ${{ secrets.CORONA_PAT }}
-          CORONA_HOST: ${{ secrets.CORONA_HOST }}
-          CORONA_USERNAME: ${{ secrets.CORONA_USERNAME }}
 
       - name: Install dependencies
         run: |
