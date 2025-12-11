@@ -29,8 +29,7 @@ class ImageManager(CoronaAPIClient):
         try:
             res_json = self.make_authenticated_request(
                 'GET',
-                f'api/v2/images?product_id={product_id}&'
-                f'release_id={release_id}'
+                f'api/v2/images?release_id={release_id}'
             )
             image = next(
                 (img for img in res_json['data']
