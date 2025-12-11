@@ -35,9 +35,18 @@ class SpdxManager(CoronaAPIClient):
         try:
             # Read SPDX file as JSON data
             with open(spdx_file_path, 'r') as f:
-                spdx_data['data'] = f.read()
+                spdx_content = f.read()
+                spdx_data['data'] = spdx_content
+                
+                # Extract spdx_version from the JSON content
+                import json
+                spdx_json = json.loads(spdx_content)
+                if 'spdxVersion' in spdx_json:
+                    spdx_data['spdx_version'] = spdx_json['spdxVersion']
         except FileNotFoundError:
             raise CoronaError(f"SPDX file '{spdx_file_path}' not found.")
+        except json.JSONDecodeError as e:
+            raise CoronaError(f"Invalid JSON in SPDX file: {e}")
 
         # First, POST the JSON data with ignore parameters
         res_json = self.make_authenticated_request(
