@@ -439,14 +439,14 @@ class TestSpdxManager:
     @mock.patch.object(CoronaAPIClient, 'make_authenticated_request')
     def test_update_or_add_spdx(self, mock_make_authenticated_request, spdx_manager, tmp_path):
         spdx_file = tmp_path / 'test.spdx'
-        spdx_file.write_text('SPDX file content')
+        spdx_file.write_text('{"spdxVersion": "SPDX-2.3", "data": "test"}')
 
         mock_make_authenticated_request.side_effect = [{'id': 'mocked_image_id'}, {}]
         spdx_manager.update_or_add_spdx('mocked_image_id', str(spdx_file))
         assert mock_make_authenticated_request.call_count == 2
 
     # Test for update_or_add_spdx - Successful case
-    @mock.patch("builtins.open", new_callable=mock_open, read_data="mock_spdx_data")
+    @mock.patch("builtins.open", new_callable=mock_open, read_data='{"spdxVersion": "SPDX-2.3"}')
     @mock.patch.object(SpdxManager, 'make_authenticated_request')
     def test_update_or_add_spdx_success(self, mock_make_authenticated_request, mock_open_file, spdx_manager):
         '''Test update_or_add_spdx successfully posts data and file.'''
@@ -466,7 +466,8 @@ class TestSpdxManager:
                 'ignore_relationships': 'true',
                 'ignore_eo_compliant': 'true',
                 'ignore_validation': 'true',
-                'data': 'mock_spdx_data'
+                'spdx_version': 'SPDX-2.3',
+                'data': '{"spdxVersion": "SPDX-2.3"}'
             }
         )
 
@@ -493,7 +494,7 @@ class TestSpdxManager:
 
 
     # Test for update_or_add_spdx - Network request failure on JSON POST
-    @mock.patch("builtins.open", new_callable=mock_open, read_data="mock_spdx_data")
+    @mock.patch("builtins.open", new_callable=mock_open, read_data='{"spdxVersion": "SPDX-2.3"}')
     @mock.patch.object(SpdxManager, 'make_authenticated_request')
     def test_update_or_add_spdx_request_failure_json(self, mock_make_authenticated_request, mock_open_file, spdx_manager):
         '''Test update_or_add_spdx when the first POST request raises an error.'''
@@ -509,7 +510,7 @@ class TestSpdxManager:
 
 
     # Test for update_or_add_spdx - Network request failure on file POST
-    @mock.patch("builtins.open", new_callable=mock_open, read_data="mock_spdx_data")
+    @mock.patch("builtins.open", new_callable=mock_open, read_data='{"spdxVersion": "SPDX-2.3"}')
     @mock.patch.object(SpdxManager, 'make_authenticated_request')
     def test_update_or_add_spdx_request_failure_file(self, mock_make_authenticated_request, mock_open_file, spdx_manager):
         '''Test update_or_add_spdx when the second POST request (file) raises an error.'''
@@ -529,7 +530,7 @@ class TestSpdxManager:
 
 
     # Test for update_or_add_spdx - Unexpected API response structure
-    @mock.patch("builtins.open", new_callable=mock_open, read_data="mock_spdx_data")
+    @mock.patch("builtins.open", new_callable=mock_open, read_data='{"spdxVersion": "SPDX-2.3"}')
     @mock.patch.object(SpdxManager, 'make_authenticated_request')
     def test_update_or_add_spdx_unexpected_response(self, mock_make_authenticated_request, mock_open_file, spdx_manager):
         '''Test update_or_add_spdx when the response structure is unexpected.'''
