@@ -105,10 +105,9 @@ class CoronaAPIClient:
                 msg = f'>>>TEST>>> headers = {headers}, url = {url}/n'
                 logger.debug(msg)
 
-                # SPDX uploads need form data, not JSON
-                use_form_data = 'spdx.json' in endpoint
-                
+                # Use appropriate content type based on what's passed
                 if files:
+                    # File upload with optional data
                     response = requests.request(
                         method,
                         url,
@@ -117,8 +116,8 @@ class CoronaAPIClient:
                         files=files,
                         timeout=MAX_REQ_TIMEOUT
                     )
-                elif use_form_data and data:
-                    # SPDX endpoints require form-encoded data
+                elif data and isinstance(data, dict) and any(isinstance(v, str) and len(v) > 1000 for v in data.values()):
+                    # Large string values (like SPDX content) - use form data
                     response = requests.request(
                         method,
                         url,
@@ -127,7 +126,7 @@ class CoronaAPIClient:
                         timeout=MAX_REQ_TIMEOUT
                     )
                 else:
-                    # All other endpoints use JSON
+                    # Normal API calls use JSON
                     response = requests.request(
                         method,
                         url,
@@ -159,25 +158,35 @@ class CoronaAPIClient:
             f'{retries} attempts'
         )
 
-    def _handle_error(self, e, response, action):
+    def _handle_error(self, exception, response, context):
         """
-        Handle API errors for make_authenticated_request().
+        Handle errors from API requests.
 
         Args:
-            e: Exception that occurred
-            response: HTTP response object
-            action: Description of the action being performed
+            exception: The exception that occurred
+            response: The response object
+            context: Context about where the error occurred
+
+        Raises:
+            CoronaError: With detailed error message
         """
+        try:
+            error_json = response.json()
+            msg = (f'>>>TEST>>> e = {repr(str(exception))!r} \n'
+                   f'response = {repr(str(error_json))!r}')
+            logger.debug(msg)
+            
+            # Log the FULL error details
+            logger.error(f"API Error Details: {error_json}")
+        except:
+            logger.error(f"API Error (no JSON): {response.text}")
+
         error_messages = {
-            401: f'Unauthorized access while {action}. '
+            401: f'Unauthorized access while {context}. '
                  f'Invalid PAT or token.',
-            422: f'Invalid request during {action}. '
+            422: f'Invalid request during {context}. '
                  f'Ensure that the name is unique.',
         }
-        msg = (f">>_handle_error_TEST>> e = '{e}' \n"
-               f"response = '{response.json()}'")
-        logger.debug(msg)
-
         msg = error_messages.get(
             response.status_code,
             f'Error {action}: {response.status_code} ({response.text})'
